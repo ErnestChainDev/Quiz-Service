@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
+from typing import Literal
 
 class QuestionCreateIn(BaseModel):
-    category: str = Field(default="general")
+    category: Literal["comsci", "it", "is", "btvted"]
     text: str
 
 class OptionCreateIn(BaseModel):
@@ -9,6 +10,7 @@ class OptionCreateIn(BaseModel):
     is_correct: bool = False
 
 class QuestionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     category: str
     text: str

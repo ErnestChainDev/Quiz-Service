@@ -1,6 +1,37 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import text
-from .models import Question, AnswerOption, QuizAttempt, AttemptAnswer
+from sqlalchemy import text, func
+from .models import Question, AnswerOption, QuizAttempt, AttemptAnswer, AttemptQuestion
+
+def get_random_questions(db: Session, limit: int = 10):
+    return (
+        db.query(Question)
+        .order_by(func.rand())   # MySQL: RAND()
+        .limit(limit)
+        .all()
+    )
+
+def lock_attempt_questions(db: Session, attempt_id: int, questions: list[Question]) -> None:
+    # clear if any (para safe kung ma-call twice)
+    db.query(AttemptQuestion).filter(AttemptQuestion.attempt_id == attempt_id)\
+        .delete(synchronize_session=False)
+    
+    db.flush()
+
+    db.bulk_save_objects([
+        AttemptQuestion(attempt_id=attempt_id, question_id=q.id)
+        for q in questions
+    ])
+    db.commit()
+
+def get_attempt_questions(db: Session, attempt_id: int) -> list[Question]:
+    # returns questions in the same set saved for that attempt
+    return (
+        db.query(Question)
+        .join(AttemptQuestion, AttemptQuestion.question_id == Question.id)
+        .filter(AttemptQuestion.attempt_id == attempt_id)
+        .order_by(AttemptQuestion.id.asc())  # stable order
+        .all()
+    )
 
 def create_question(db: Session, category: str, text: str):
     q = Question(category=category, text=text)
@@ -34,32 +65,63 @@ def submit_attempt(db: Session, attempt_id: int, answers: list[dict]) -> QuizAtt
     if not attempt:
         raise ValueError("Attempt not found")
 
-    score = 0
-    total = len(answers)
+    # ✅ Get locked questions for this attempt
+    locked_qids = {
+        qid for (qid,) in (
+            db.query(AttemptQuestion.question_id)
+            .filter(AttemptQuestion.attempt_id == attempt_id)
+            .all()
+        )
+    }
+    if not locked_qids:
+        raise ValueError("Attempt has no locked questions")
 
-    # clear previous attempt answers (optional)
-    db.query(AttemptAnswer).filter(AttemptAnswer.attempt_id == attempt_id).delete()
-
+    # De-duplicate by question_id (keep last answer)
+    dedup: dict[int, int] = {}
     for a in answers:
-        opt = db.query(AnswerOption).filter(AnswerOption.id == a["selected_option_id"]).first()
-        is_correct = bool(opt and opt.is_correct)
+        qid = int(a["question_id"])
+        oid = int(a["selected_option_id"])
+        if qid in locked_qids:   # ✅ only accept answers from locked set
+            dedup[qid] = oid
+
+    # ✅ STRICT: must answer ALL locked questions
+    if len(dedup) != len(locked_qids):
+        missing = len(locked_qids) - len(dedup)
+        raise ValueError(f"Please answer all questions before submitting. Missing: {missing}")
+
+    # Clear old answers (safe even if re-submit)
+    db.query(AttemptAnswer).filter(AttemptAnswer.attempt_id == attempt_id) \
+        .delete(synchronize_session=False)
+
+    score = 0
+    for qid, selected_opt_id in dedup.items():
+        opt = db.query(AnswerOption).filter(
+            AnswerOption.id == selected_opt_id,
+            AnswerOption.question_id == qid,
+        ).first()
+
+        # (optional) if selected option is invalid for that question
+        if not opt:
+            raise ValueError("Invalid option selected")
+
+        is_correct = bool(opt.is_correct)
         if is_correct:
             score += 1
+
         db.add(AttemptAnswer(
             attempt_id=attempt_id,
-            question_id=a["question_id"],
-            selected_option_id=a["selected_option_id"],
+            question_id=qid,
+            selected_option_id=selected_opt_id,
             is_correct=is_correct
         ))
 
     attempt.score = score
-    attempt.total = total
+    attempt.total = len(locked_qids)
     db.commit()
     db.refresh(attempt)
     return attempt
 
 def category_breakdown(db: Session, attempt_id: int) -> dict:
-    # compute correct counts per category
     rows = db.execute(
         text("""
         SELECT q.category, SUM(CASE WHEN aa.is_correct THEN 1 ELSE 0 END) AS correct
@@ -71,7 +133,7 @@ def category_breakdown(db: Session, attempt_id: int) -> dict:
         {"aid": attempt_id},
     ).fetchall()
 
-    out = {"logic": 0, "programming": 0, "networking": 0, "design": 0}
+    out = {"comsci": 0, "it": 0, "is": 0, "btvted": 0}
     for cat, correct in rows:
         if cat in out:
             out[cat] = int(correct or 0)
