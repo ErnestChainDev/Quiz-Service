@@ -133,7 +133,7 @@ def category_breakdown(db: Session, attempt_id: int) -> dict:
         {"aid": attempt_id},
     ).fetchall()
 
-    out = {"comsci": 0, "it": 0, "is": 0, "btvted": 0}
+    out = {"bscs": 0, "bsit": 0, "bsis": 0, "btvted": 0}
     for cat, correct in rows:
         if cat in out:
             out[cat] = int(correct or 0)

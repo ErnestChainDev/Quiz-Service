@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import Literal
 
 class QuestionCreateIn(BaseModel):
-    category: Literal["comsci", "it", "is", "btvted"]
+    category: Literal["bscs", "bsit", "bsis", "btvted"]
     text: str
 
 class OptionCreateIn(BaseModel):

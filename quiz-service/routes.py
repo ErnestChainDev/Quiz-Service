@@ -129,10 +129,11 @@ def build_router(SessionLocal):
             "attempt_id": attempt.id,
             "score": attempt.score,
             "total": attempt.total,
-            "comsci": breakdown["comsci"],
-            "it": breakdown["it"],
-            "is": breakdown["is"],
-            "btvted": breakdown["btvted"],
+            
+            "logic": breakdown["bsis"],
+            "programming": breakdown["bscs"],
+            "networking": breakdown["bsit"],
+            "design": breakdown["btvted"],
         }
 
         try:
