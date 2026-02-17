@@ -74,7 +74,7 @@ def build_router(SessionLocal):
     def start(
         request: Request,
         db: Session = Depends(get_db),
-        limit: int = Query(10, ge=1, le=50),
+        limit: int = Query(40, ge=1, le=50),
     ):
         uid = current_user_id(request)
 
@@ -84,8 +84,15 @@ def build_router(SessionLocal):
         # 2) pick random questions ONCE
         qs = get_random_questions(db, limit=limit)
 
+        if len(qs) < limit:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Not enough questions in DB. Need {limit}, found {len(qs)}"
+            )
+
         # 3) lock them to this attempt (refresh-safe)
         lock_attempt_questions(db, a.id, qs)
+        db.commit()
 
         return AttemptStartOut(attempt_id=a.id)
 

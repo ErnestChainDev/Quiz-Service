@@ -21,7 +21,6 @@ def lock_attempt_questions(db: Session, attempt_id: int, questions: list[Questio
         AttemptQuestion(attempt_id=attempt_id, question_id=q.id)
         for q in questions
     ])
-    db.commit()
 
 def get_attempt_questions(db: Session, attempt_id: int) -> list[Question]:
     # returns questions in the same set saved for that attempt
