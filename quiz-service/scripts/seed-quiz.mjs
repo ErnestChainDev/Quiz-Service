@@ -1,28 +1,51 @@
-// scripts/seed-quiz.mjs
-// Run: node scripts/seed-quiz.mjs
-const API_BASE = (process.env.VITE_API_BASE_URL || process.env.API_BASE_URL || "").replace(/\/$/, "");
-const QUIZ_PREFIX = process.env.QUIZ_PREFIX ?? "/quiz"; // set to "" if no prefix
+const QUIZ_SERVICE_URL = (process.env.QUIZ_SERVICE_URL || "http://localhost:5173").replace(/\/$/, "");
+const QUIZ_PREFIX = "/quiz";
 
-if (!API_BASE) {
-    console.error("Missing API_BASE_URL or VITE_API_BASE_URL env var");
-    process.exit(1);
+const SKIP_DUPLICATES = (process.env.SKIP_DUPLICATES || "1") === "1";
+
+async function safeJson(res) {
+    const text = await res.text();
+    if (!text) return null;
+    try {
+        return JSON.parse(text);
+    } catch {
+        return { _raw: text };
+    }
 }
 
-async function post(path, body) {
-    const res = await fetch(`${API_BASE}${QUIZ_PREFIX}${path}`, {
-        method: "POST",
+async function request(method, path, body) {
+    const url = `${QUIZ_SERVICE_URL}${QUIZ_PREFIX}${path}`;
+    const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: body ? JSON.stringify(body) : undefined,
     });
-    const text = await res.text();
-    let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch {}
+
+    const data = await safeJson(res);
+
     if (!res.ok) {
-        throw new Error(`${path} failed ${res.status}: ${(data && (data.detail || data.message)) || text}`);
+        const detail =
+        (data && (data.detail || data.message)) ||
+        (data && data._raw) ||
+        `Request failed (${res.status})`;
+        throw new Error(`${method} ${url} -> ${res.status}: ${detail}`);
     }
+
     return data;
 }
 
+async function getQuestions(limit = 200) {
+    // your quiz-service has GET /quiz/questions?limit=...
+    return request("GET", `/questions?limit=${limit}`);
+}
+
+function normalizeText(s) {
+    return String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+// ----------------------
+// Your quiz data (unchanged)
+// ----------------------
 const QUIZ = [
     // --- BSCS (10)
     {
@@ -434,15 +457,41 @@ const QUIZ = [
 ];
 
 async function main() {
-    console.log("Seeding quiz questions…");
-    for (const q of QUIZ) {
-        const createdQ = await post("/questions", { category: q.category, text: q.text });
-        for (const opt of q.options) {
-        await post(`/questions/${createdQ.id}/options`, opt);
+    console.log(`Seeding into: ${QUIZ_SERVICE_URL}${QUIZ_PREFIX}`);
+
+    let existing = [];
+    if (SKIP_DUPLICATES) {
+        try {
+        existing = await getQuestions(500);
+        } catch {
+        existing = [];
         }
-        console.log(`✓ ${q.category.toUpperCase()} Q${createdQ.id}`);
     }
-    console.log("Done.");
+
+    const existingKeys = new Set(
+        (existing || []).map((q) => `${q.category}::${normalizeText(q.text)}`)
+    );
+
+    let createdCount = 0;
+    for (const q of QUIZ) {
+        const key = `${q.category}::${normalizeText(q.text)}`;
+
+        if (SKIP_DUPLICATES && existingKeys.has(key)) {
+        console.log(`↷ skip duplicate: [${q.category}] ${q.text}`);
+        continue;
+        }
+
+        const createdQ = await request("POST", "/questions", { category: q.category, text: q.text });
+
+        for (const opt of q.options) {
+        await request("POST", `/questions/${createdQ.id}/options`, opt);
+        }
+
+        createdCount += 1;
+        console.log(`✓ created: [${q.category}] Q${createdQ.id}`);
+    }
+
+    console.log(`Done. Created ${createdCount} new questions.`);
 }
 
 main().catch((e) => {
