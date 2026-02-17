@@ -92,6 +92,7 @@ def submit_attempt(db: Session, attempt_id: int, answers: list[dict]) -> QuizAtt
     # Clear old answers (safe even if re-submit)
     db.query(AttemptAnswer).filter(AttemptAnswer.attempt_id == attempt_id) \
         .delete(synchronize_session=False)
+    db.flush()
 
     score = 0
     for qid, selected_opt_id in dedup.items():
