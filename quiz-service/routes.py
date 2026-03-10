@@ -18,7 +18,6 @@ from .crud import (
     get_attempt_questions,
     get_drag_items_for_question,
     get_latest_active_attempt,
-    get_latest_completed_attempt,
     get_options_for_question,
     get_random_questions,
     lock_attempt_questions,
@@ -194,7 +193,7 @@ def build_router(SessionLocal):
     ):
         uid = current_user_id(request)
 
-        # continue active attempt if it already has locked questions
+        # If user has an active quiz, continue it
         active_attempt = get_latest_active_attempt(db, uid)
         if active_attempt:
             existing_questions = get_attempt_questions(db, active_attempt.id)
@@ -222,14 +221,7 @@ def build_router(SessionLocal):
                 status=cast(AttemptStatus, active_attempt.status),
             )
 
-        # no retake after completed attempt
-        completed = get_latest_completed_attempt(db, uid)
-        if completed:
-            raise HTTPException(
-                status_code=409,
-                detail="You already completed this quiz. Retake is not allowed.",
-            )
-
+        # Retake is allowed: create a fresh attempt whenever there is no active one
         a = start_attempt(db, uid)
         qs = get_random_questions(db, limit=limit)
 
