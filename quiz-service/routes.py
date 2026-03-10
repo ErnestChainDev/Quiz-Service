@@ -194,13 +194,35 @@ def build_router(SessionLocal):
     ):
         uid = current_user_id(request)
 
+        # continue active attempt if it already has locked questions
         active_attempt = get_latest_active_attempt(db, uid)
         if active_attempt:
+            existing_questions = get_attempt_questions(db, active_attempt.id)
+
+            if existing_questions:
+                return AttemptStartOut(
+                    attempt_id=active_attempt.id,
+                    status=cast(AttemptStatus, active_attempt.status),
+                )
+
+            # repair broken in-progress attempt with no locked questions
+            qs = get_random_questions(db, limit=limit)
+
+            if len(qs) < limit:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Not enough questions in DB. Need {limit}, found {len(qs)}",
+                )
+
+            lock_attempt_questions(db, active_attempt.id, qs)
+            db.commit()
+
             return AttemptStartOut(
                 attempt_id=active_attempt.id,
                 status=cast(AttemptStatus, active_attempt.status),
             )
 
+        # no retake after completed attempt
         completed = get_latest_completed_attempt(db, uid)
         if completed:
             raise HTTPException(
