@@ -1,130 +1,387 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
-from sqlalchemy import text, func
-from .models import Question, AnswerOption, QuizAttempt, AttemptAnswer, AttemptQuestion
+
+from .models import (
+    Question,
+    AnswerOption,
+    DragDropItem,
+    QuizAttempt,
+    AttemptAnswer,
+    AttemptQuestion,
+)
+
 
 def get_random_questions(db: Session, limit: int = 10):
     return (
         db.query(Question)
-        .order_by(func.rand())   # MySQL: RAND()
+        .filter(Question.is_active.is_(True))
+        .order_by(func.rand())
         .limit(limit)
         .all()
     )
 
+
 def lock_attempt_questions(db: Session, attempt_id: int, questions: list[Question]) -> None:
-    # clear if any (para safe kung ma-call twice)
-    db.query(AttemptQuestion).filter(AttemptQuestion.attempt_id == attempt_id)\
-        .delete(synchronize_session=False)
-    
+    db.query(AttemptQuestion).filter(AttemptQuestion.attempt_id == attempt_id).delete(
+        synchronize_session=False
+    )
     db.flush()
 
-    db.bulk_save_objects([
-        AttemptQuestion(attempt_id=attempt_id, question_id=q.id)
-        for q in questions
-    ])
+    rows = [
+        AttemptQuestion(
+            attempt_id=attempt_id,
+            question_id=q.id,
+            order_index=idx,
+        )
+        for idx, q in enumerate(questions, start=1)
+    ]
+    db.bulk_save_objects(rows)
+    db.flush()
+
 
 def get_attempt_questions(db: Session, attempt_id: int) -> list[Question]:
-    # returns questions in the same set saved for that attempt
     return (
         db.query(Question)
         .join(AttemptQuestion, AttemptQuestion.question_id == Question.id)
         .filter(AttemptQuestion.attempt_id == attempt_id)
-        .order_by(AttemptQuestion.id.asc())  # stable order
+        .order_by(AttemptQuestion.order_index.asc(), AttemptQuestion.id.asc())
         .all()
     )
 
-def create_question(db: Session, category: str, text: str):
-    q = Question(category=category, text=text)
+
+def create_question(
+    db: Session,
+    category: str,
+    text: str,
+    question_type: str = "mcq",
+    points: int = 1,
+    time_limit_seconds: int = 40,
+    image_url: str | None = None,
+    blank_placeholder: str | None = None,
+):
+    q = Question(
+        category=category,
+        text=text,
+        question_type=question_type,
+        points=points,
+        time_limit_seconds=time_limit_seconds,
+        image_url=image_url,
+        blank_placeholder=blank_placeholder,
+    )
     db.add(q)
     db.commit()
     db.refresh(q)
     return q
 
-def add_option(db: Session, question_id: int, text: str, is_correct: bool):
-    opt = AnswerOption(question_id=question_id, text=text, is_correct=is_correct)
+
+def add_option(
+    db: Session,
+    question_id: int,
+    text: str,
+    is_correct: bool,
+    display_order: int = 0,
+):
+    opt = AnswerOption(
+        question_id=question_id,
+        text=text,
+        is_correct=is_correct,
+        display_order=display_order,
+    )
     db.add(opt)
     db.commit()
     db.refresh(opt)
     return opt
 
+
+def add_drag_drop_item(
+    db: Session,
+    question_id: int,
+    item_key: str,
+    item_text: str,
+    target_key: str,
+    target_label: str,
+    display_order: int = 0,
+):
+    row = DragDropItem(
+        question_id=question_id,
+        item_key=item_key,
+        item_text=item_text,
+        target_key=target_key,
+        target_label=target_label,
+        display_order=display_order,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
 def list_questions(db: Session):
     return db.query(Question).order_by(Question.id.asc()).all()
 
+
 def get_options_for_question(db: Session, question_id: int):
-    return db.query(AnswerOption).filter(AnswerOption.question_id == question_id).all()
+    return (
+        db.query(AnswerOption)
+        .filter(AnswerOption.question_id == question_id)
+        .order_by(AnswerOption.display_order.asc(), AnswerOption.id.asc())
+        .all()
+    )
+
+
+def get_drag_items_for_question(db: Session, question_id: int):
+    return (
+        db.query(DragDropItem)
+        .filter(DragDropItem.question_id == question_id)
+        .order_by(DragDropItem.display_order.asc(), DragDropItem.id.asc())
+        .all()
+    )
+
+
+def get_latest_active_attempt(db: Session, user_id: int) -> QuizAttempt | None:
+    return (
+        db.query(QuizAttempt)
+        .filter(
+            QuizAttempt.user_id == user_id,
+            QuizAttempt.status == "in_progress",
+        )
+        .order_by(QuizAttempt.id.desc())
+        .first()
+    )
+
+
+def get_latest_completed_attempt(db: Session, user_id: int) -> QuizAttempt | None:
+    return (
+        db.query(QuizAttempt)
+        .filter(
+            QuizAttempt.user_id == user_id,
+            QuizAttempt.status == "completed",
+        )
+        .order_by(QuizAttempt.id.desc())
+        .first()
+    )
+
 
 def start_attempt(db: Session, user_id: int) -> QuizAttempt:
-    a = QuizAttempt(user_id=user_id, score=0, total=0)
+    a = QuizAttempt(
+        user_id=user_id,
+        score=0,
+        total=0,
+        status="in_progress",
+    )
     db.add(a)
     db.commit()
     db.refresh(a)
     return a
 
-def submit_attempt(db: Session, attempt_id: int, answers: list[dict]) -> QuizAttempt:
+
+def get_attempt_or_raise(db: Session, attempt_id: int) -> QuizAttempt:
     attempt = db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id).first()
     if not attempt:
         raise ValueError("Attempt not found")
+    return attempt
 
-    # ✅ Get locked questions for this attempt
-    locked_qids = {
-        qid for (qid,) in (
-            db.query(AttemptQuestion.question_id)
-            .filter(AttemptQuestion.attempt_id == attempt_id)
-            .all()
+
+def get_locked_question_ids(db: Session, attempt_id: int) -> list[int]:
+    rows = (
+        db.query(AttemptQuestion.question_id)
+        .filter(AttemptQuestion.attempt_id == attempt_id)
+        .order_by(AttemptQuestion.order_index.asc())
+        .all()
+    )
+    return [qid for (qid,) in rows]
+
+
+def upsert_attempt_answer(db: Session, attempt_id: int, answer: dict) -> AttemptAnswer:
+    attempt = get_attempt_or_raise(db, attempt_id)
+    if attempt.status != "in_progress":
+        raise ValueError("This attempt is no longer active")
+
+    question_id = int(answer["question_id"])
+    answer_state = answer.get("answer_state", "answered")
+
+    locked_qids = set(get_locked_question_ids(db, attempt_id))
+    if question_id not in locked_qids:
+        raise ValueError("Question is not part of this attempt")
+
+    question = db.query(Question).filter(Question.id == question_id).first()
+    if not question:
+        raise ValueError("Question not found")
+
+    row = (
+        db.query(AttemptAnswer)
+        .filter(
+            AttemptAnswer.attempt_id == attempt_id,
+            AttemptAnswer.question_id == question_id,
         )
-    }
+        .first()
+    )
+    if not row:
+        row = AttemptAnswer(attempt_id=attempt_id, question_id=question_id)
+        db.add(row)
+
+    points_earned = 0
+    is_correct = False
+    payload = None
+
+    if answer_state == "missed":
+        payload = None
+        points_earned = 0
+        is_correct = False
+
+    elif question.question_type in ("mcq", "fill_blank_choice"):
+        selected_option_id = answer.get("selected_option_id")
+        if not selected_option_id:
+            answer_state = "unanswered"
+            payload = None
+            points_earned = 0
+            is_correct = False
+        else:
+            opt = (
+                db.query(AnswerOption)
+                .filter(
+                    AnswerOption.id == int(selected_option_id),
+                    AnswerOption.question_id == question_id,
+                )
+                .first()
+            )
+            if not opt:
+                raise ValueError("Invalid option selected")
+
+            payload = {"selected_option_id": int(selected_option_id)}
+            is_correct = bool(opt.is_correct)
+            points_earned = int(question.points if is_correct else 0)
+
+    elif question.question_type == "drag_drop":
+        mappings = answer.get("mappings", []) or []
+        payload = {"mappings": mappings}
+
+        correct_items = get_drag_items_for_question(db, question_id)
+        correct_map = {item.item_key: item.target_key for item in correct_items}
+
+        submitted_map = {
+            str(m["item_key"]): str(m["target_key"])
+            for m in mappings
+            if "item_key" in m and "target_key" in m
+        }
+
+        points_earned = 0
+        for item_key, correct_target in correct_map.items():
+            if submitted_map.get(item_key) == correct_target:
+                points_earned += 1
+
+        is_correct = points_earned == len(correct_map) and len(correct_map) > 0
+
+        if not mappings:
+            answer_state = "unanswered"
+
+    else:
+        raise ValueError("Unsupported question type")
+
+    row.answer_state = answer_state
+    row.answer_payload = payload
+    row.is_correct = is_correct
+    row.points_earned = points_earned
+    row.answered_at = datetime.utcnow() if answer_state == "answered" else None
+
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+def get_attempt_answers(db: Session, attempt_id: int) -> list[AttemptAnswer]:
+    return (
+        db.query(AttemptAnswer)
+        .filter(AttemptAnswer.attempt_id == attempt_id)
+        .order_by(AttemptAnswer.question_id.asc())
+        .all()
+    )
+
+
+def compute_attempt_totals(db: Session, attempt_id: int) -> tuple[int, int]:
+    questions = get_attempt_questions(db, attempt_id)
+    total = 0
+    for q in questions:
+        if q.question_type == "drag_drop":
+            total += len(get_drag_items_for_question(db, q.id))
+        else:
+            total += q.points
+
+    answers = get_attempt_answers(db, attempt_id)
+    score = sum(int(a.points_earned or 0) for a in answers)
+    return score, total
+
+
+def submit_attempt(db: Session, attempt_id: int, answers: list[dict]) -> QuizAttempt:
+    attempt = get_attempt_or_raise(db, attempt_id)
+    if attempt.status != "in_progress":
+        raise ValueError("Attempt is already finished")
+
+    locked_qids = get_locked_question_ids(db, attempt_id)
     if not locked_qids:
         raise ValueError("Attempt has no locked questions")
 
-    # De-duplicate by question_id (keep last answer)
-    dedup: dict[int, int] = {}
-    for a in answers:
-        qid = int(a["question_id"])
-        oid = int(a["selected_option_id"])
-        if qid in locked_qids:   # ✅ only accept answers from locked set
-            dedup[qid] = oid
+    # save/update all provided answers first
+    for answer in answers:
+        upsert_attempt_answer(db, attempt_id, answer)
 
-    # ✅ STRICT: must answer ALL locked questions
-    if len(dedup) != len(locked_qids):
-        missing = len(locked_qids) - len(dedup)
-        raise ValueError(f"Please answer all questions before submitting. Missing: {missing}")
+    existing = {
+        row.question_id: row
+        for row in get_attempt_answers(db, attempt_id)
+    }
 
-    # Clear old answers (safe even if re-submit)
-    db.query(AttemptAnswer).filter(AttemptAnswer.attempt_id == attempt_id) \
-        .delete(synchronize_session=False)
-    db.flush()
+    # auto-create unanswered/missed rows if absent
+    for qid in locked_qids:
+        if qid not in existing:
+            db.add(
+                AttemptAnswer(
+                    attempt_id=attempt_id,
+                    question_id=qid,
+                    answer_state="unanswered",
+                    answer_payload=None,
+                    is_correct=False,
+                    points_earned=0,
+                    answered_at=None,
+                )
+            )
 
-    score = 0
-    for qid, selected_opt_id in dedup.items():
-        opt = db.query(AnswerOption).filter(
-            AnswerOption.id == selected_opt_id,
-            AnswerOption.question_id == qid,
-        ).first()
+    db.commit()
 
-        # (optional) if selected option is invalid for that question
-        if not opt:
-            raise ValueError("Invalid option selected")
-
-        is_correct = bool(opt.is_correct)
-        if is_correct:
-            score += 1
-
-        db.add(AttemptAnswer(
-            attempt_id=attempt_id,
-            question_id=qid,
-            selected_option_id=selected_opt_id,
-            is_correct=is_correct
-        ))
-
+    score, total = compute_attempt_totals(db, attempt_id)
     attempt.score = score
-    attempt.total = len(locked_qids)
+    attempt.total = total
+    attempt.status = "completed"
+    attempt.submitted_at = datetime.utcnow()
+
     db.commit()
     db.refresh(attempt)
     return attempt
 
+
+def cancel_attempt(db: Session, attempt_id: int) -> QuizAttempt:
+    attempt = get_attempt_or_raise(db, attempt_id)
+    if attempt.status != "in_progress":
+        raise ValueError("Only active attempts can be cancelled")
+
+    score, total = compute_attempt_totals(db, attempt_id)
+    attempt.score = score
+    attempt.total = total
+    attempt.status = "cancelled"
+    attempt.cancelled_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(attempt)
+    return attempt
+
+
 def category_breakdown(db: Session, attempt_id: int) -> dict:
     rows = db.execute(
         text("""
-        SELECT q.category, SUM(CASE WHEN aa.is_correct THEN 1 ELSE 0 END) AS correct
+        SELECT q.category, COALESCE(SUM(aa.points_earned), 0) AS earned_points
         FROM attempt_answer aa
         JOIN question q ON q.id = aa.question_id
         WHERE aa.attempt_id = :aid
@@ -134,7 +391,7 @@ def category_breakdown(db: Session, attempt_id: int) -> dict:
     ).fetchall()
 
     out = {"bscs": 0, "bsit": 0, "bsis": 0, "btvted": 0}
-    for cat, correct in rows:
+    for cat, earned_points in rows:
         if cat in out:
-            out[cat] = int(correct or 0)
+            out[cat] = int(earned_points or 0)
     return out

@@ -15,7 +15,13 @@ def _get_or_create_question(db: Session, *, category: str, text: str) -> Questio
     if q:
         return q
 
-    q = Question(category=category, text=text)
+    q = Question(
+        category=category,
+        text=text,
+        question_type="mcq",
+        points=1,
+        time_limit_seconds=40,
+    )
     db.add(q)
     db.flush()  # get q.id without committing yet
     return q
@@ -39,7 +45,12 @@ def _get_or_create_option(
             opt.is_correct = bool(is_correct)
         return opt
 
-    opt = AnswerOption(question_id=question_id, text=text, is_correct=bool(is_correct))
+    opt = AnswerOption(
+        question_id=question_id,
+        text=text,
+        is_correct=bool(is_correct),
+        display_order=0,
+    )
     db.add(opt)
     return opt
 

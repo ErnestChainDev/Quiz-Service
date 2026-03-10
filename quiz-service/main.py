@@ -1,13 +1,15 @@
 # quiz_service/main.py
 import os
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
-from shared.database import build_mysql_url, make_engine, make_session_factory, Base
+from shared.database import Base, build_mysql_url, make_engine, make_session_factory
 from .routes import build_router
 
 load_dotenv()
-app = FastAPI(title="Quiz Service", version="1.0.0")
+
+app = FastAPI(title="Quiz Service", version="2.0.0")
 
 db_url = build_mysql_url(
     host=os.environ["MYSQLHOST"],
@@ -16,11 +18,17 @@ db_url = build_mysql_url(
     password=os.environ["MYSQLPASSWORD"],
     db=os.environ["MYSQLDATABASE"],
 )
+
 engine = make_engine(db_url)
 SessionLocal = make_session_factory(engine)
+
+# NOTE:
+# create_all() only creates missing tables.
+# It will NOT alter old existing columns/tables.
 Base.metadata.create_all(bind=engine)
 
 app.include_router(build_router(SessionLocal), prefix="/quiz", tags=["quiz"])
+
 
 @app.get("/health")
 def health():
@@ -31,7 +39,7 @@ def health():
 def seed_on_startup():
     """
     - Default: seed ONLY if no questions exist yet
-    - You can force seed with: SEED_QUESTIONS=1
+    - Force seed with: SEED_QUESTIONS=1
     """
     from .seed import seed_questions
     from .models import Question
