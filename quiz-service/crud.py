@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import func, text
+from sqlalchemy import func, text, true
 from sqlalchemy.orm import Session
 
 from .models import (
@@ -15,14 +15,94 @@ from .models import (
 )
 
 
-def get_random_questions(db: Session, limit: int = 10):
+def _get_random_questions_by_type(
+    db: Session,
+    *,
+    question_type: str,
+    limit: int,
+) -> list[Question]:
+    if limit <= 0:
+        return []
+
     return (
         db.query(Question)
-        .filter(Question.is_active.is_(True))
+        .filter(
+            Question.is_active.is_(True),
+            Question.question_type == question_type,
+        )
         .order_by(func.rand())
         .limit(limit)
         .all()
     )
+
+
+def get_random_questions(db: Session, limit: int = 10) -> list[Question]:
+    """
+    Balanced selection by question type.
+
+    Default target for 20:
+    - 8 mcq
+    - 7 fill_blank_choice
+    - 5 drag_drop
+
+    If limit is different, it scales proportionally.
+    If one type lacks enough questions, remaining slots are filled
+    from other active questions not yet selected.
+    """
+    if limit <= 0:
+        return []
+
+    # preferred mix based on 20-question quiz
+    mcq_target = round(limit * 0.40)
+    fill_target = round(limit * 0.35)
+    drag_target = limit - mcq_target - fill_target
+
+    selected: list[Question] = []
+    selected_ids: set[int] = set()
+
+    mcq = _get_random_questions_by_type(db, question_type="mcq", limit=mcq_target)
+    fill = _get_random_questions_by_type(
+        db,
+        question_type="fill_blank_choice",
+        limit=fill_target,
+    )
+    drag = _get_random_questions_by_type(db, question_type="drag_drop", limit=drag_target)
+
+    for bucket in (mcq, fill, drag):
+        for q in bucket:
+            if q.id not in selected_ids:
+                selected.append(q)
+                selected_ids.add(q.id)
+
+    remaining = limit - len(selected)
+    if remaining > 0:
+        extra = (
+            db.query(Question)
+            .filter(
+                Question.is_active.is_(True),
+                ~Question.id.in_(selected_ids) if selected_ids else true(),
+            )
+            .order_by(func.rand())
+            .limit(remaining)
+            .all()
+        )
+        for q in extra:
+            if q.id not in selected_ids:
+                selected.append(q)
+                selected_ids.add(q.id)
+
+    # shuffle final list so hindi grouped by type
+    if selected:
+        ids = [q.id for q in selected]
+        shuffled = (
+            db.query(Question)
+            .filter(Question.id.in_(ids))
+            .order_by(func.rand())
+            .all()
+        )
+        return shuffled
+
+    return selected
 
 
 def lock_attempt_questions(db: Session, attempt_id: int, questions: list[Question]) -> None:
@@ -325,7 +405,6 @@ def submit_attempt(db: Session, attempt_id: int, answers: list[dict]) -> QuizAtt
     if not locked_qids:
         raise ValueError("Attempt has no locked questions")
 
-    # save/update all provided answers first
     for answer in answers:
         upsert_attempt_answer(db, attempt_id, answer)
 
@@ -334,7 +413,6 @@ def submit_attempt(db: Session, attempt_id: int, answers: list[dict]) -> QuizAtt
         for row in get_attempt_answers(db, attempt_id)
     }
 
-    # auto-create unanswered/missed rows if absent
     for qid in locked_qids:
         if qid not in existing:
             db.add(
