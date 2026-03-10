@@ -50,6 +50,8 @@ AI_SERVICE_URL = os.getenv(
     "https://ai-recommendation-engine-service-production-ai.up.railway.app",
 ).rstrip("/")
 
+MIN_RECOMMEND_PERCENT = float(os.getenv("MIN_RECOMMEND_PERCENT", "30"))
+
 
 def build_router(SessionLocal):
     get_db = db_dependency(SessionLocal)
@@ -193,7 +195,6 @@ def build_router(SessionLocal):
     ):
         uid = current_user_id(request)
 
-        # If user has an active quiz, continue it
         active_attempt = get_latest_active_attempt(db, uid)
         if active_attempt:
             existing_questions = get_attempt_questions(db, active_attempt.id)
@@ -204,7 +205,6 @@ def build_router(SessionLocal):
                     status=cast(AttemptStatus, active_attempt.status),
                 )
 
-            # repair broken in-progress attempt with no locked questions
             qs = get_random_questions(db, limit=limit)
 
             if len(qs) < limit:
@@ -221,7 +221,6 @@ def build_router(SessionLocal):
                 status=cast(AttemptStatus, active_attempt.status),
             )
 
-        # Retake is allowed: create a fresh attempt whenever there is no active one
         a = start_attempt(db, uid)
         qs = get_random_questions(db, limit=limit)
 
@@ -353,16 +352,32 @@ def build_router(SessionLocal):
             "design": breakdown.get("btvted", 0),
         }
 
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                r = await client.post(f"{AI_SERVICE_URL}/ai/recommend", json=rec_payload)
+        percent_score = (attempt.score / attempt.total) * 100 if attempt.total > 0 else 0.0
 
-            recommendation = r.json() if 200 <= r.status_code < 300 else {
-                "detail": "AI recommend failed",
-                "status_code": r.status_code,
+        if percent_score < MIN_RECOMMEND_PERCENT:
+            recommendation = {
+                "detail": (
+                    f"No recommendation available because the score is below "
+                    f"the minimum threshold of {MIN_RECOMMEND_PERCENT:.0f}%."
+                ),
+                "percent_score": round(percent_score, 1),
+                "minimum_required_percent": MIN_RECOMMEND_PERCENT,
             }
-        except Exception:
-            recommendation = {"detail": "AI service unavailable"}
+        else:
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    r = await client.post(f"{AI_SERVICE_URL}/ai/recommend", json=rec_payload)
+
+                recommendation = r.json() if 200 <= r.status_code < 300 else {
+                    "detail": "AI recommend failed",
+                    "status_code": r.status_code,
+                    "percent_score": round(percent_score, 1),
+                }
+            except Exception:
+                recommendation = {
+                    "detail": "AI service unavailable",
+                    "percent_score": round(percent_score, 1),
+                }
 
         return SubmitQuizOut(
             attempt_id=attempt.id,
