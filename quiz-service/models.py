@@ -63,8 +63,8 @@ class DragDropItem(Base):
     item_text: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # correct target slot
-    target_key: Mapped[str] = mapped_column(String(100), nullable=False)
-    target_label: Mapped[str] = mapped_column(String(255), nullable=False)
+    target_key: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    target_label: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 

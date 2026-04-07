@@ -317,7 +317,9 @@ def _mcq_data() -> list[dict]:
             ],
         },
 
-        # 10 BSIS / BTVTED mixed
+        # =========================
+        # 10 QUESTIONS - BSIS
+        # =========================
         {
             "category": "bsis",
             "text": "AI-driven personalized learning systems mainly use data to:",
@@ -369,6 +371,60 @@ def _mcq_data() -> list[dict]:
             ],
         },
         {
+            "category": "bsis",
+            "text": "What is the main purpose of an Information System in business?",
+            "options": [
+                ("Entertainment only", False),
+                ("Support operations and decision-making", True),
+                ("Replace employees", False),
+                ("Delete company data", False),
+            ],
+        },
+        {
+            "category": "bsis",
+            "text": "Enterprise Resource Planning (ERP) systems help organizations to:",
+            "options": [
+                ("Disconnect departments", False),
+                ("Integrate business processes", True),
+                ("Limit communication", False),
+                ("Focus only on marketing", False),
+            ],
+        },
+        {
+            "category": "bsis",
+            "text": "A database management system (DBMS) is used to:",
+            "options": [
+                ("Store and manage structured data", True),
+                ("Design posters", False),
+                ("Create animations", False),
+                ("Play media files", False),
+            ],
+        },
+        {
+            "category": "bsis",
+            "text": "Business Intelligence (BI) tools are mainly used to:",
+            "options": [
+                ("Delete records", False),
+                ("Analyze and visualize business data", True),
+                ("Write code only", False),
+                ("Block reporting", False),
+            ],
+        },
+        {
+            "category": "bsis",
+            "text": "Cloud computing allows businesses to:",
+            "options": [
+                ("Use physical servers only", False),
+                ("Avoid data storage", False),
+                ("Disconnect networks", False),
+                ("Access resources over the internet", True),
+            ],
+        },
+
+        # =========================
+        # 10 QUESTIONS - BTVTED
+        # =========================
+        {
             "category": "btvted",
             "text": "Gamification in education aims to:",
             "options": [
@@ -383,8 +439,8 @@ def _mcq_data() -> list[dict]:
             "text": "Adaptive learning systems using AI mainly:",
             "options": [
                 ("Give the same lesson to everyone", False),
-                ("Adjust lessons based on learner performance", True),
                 ("Remove quizzes", False),
+                ("Adjust lessons based on learner performance", True),
                 ("Disable analytics", False),
             ],
         },
@@ -392,8 +448,8 @@ def _mcq_data() -> list[dict]:
             "category": "btvted",
             "text": "A benefit of VR in classrooms is:",
             "options": [
-                ("Less interaction", False),
                 ("Immersive simulations", True),
+                ("Less interaction", False),
                 ("No need for instruction", False),
                 ("Lower accessibility automatically", False),
             ],
@@ -403,9 +459,9 @@ def _mcq_data() -> list[dict]:
             "text": "A big challenge in online learning platforms is:",
             "options": [
                 ("Too much chalk", False),
-                ("Maintaining student engagement", True),
                 ("No devices exist", False),
                 ("No internet anywhere", False),
+                ("Maintaining student engagement", True),
             ],
         },
         {
@@ -416,6 +472,56 @@ def _mcq_data() -> list[dict]:
                 ("Designing so people with disabilities can use the system", True),
                 ("Using small fonts always", False),
                 ("Avoiding captions", False),
+            ],
+        },
+        {
+            "category": "btvted",
+            "text": "Instructional design focuses on:",
+            "options": [
+                ("Random teaching", False),
+                ("Effective planning of learning experiences", True),
+                ("Ignoring learners", False),
+                ("Avoiding objectives", False),
+            ],
+        },
+        {
+            "category": "btvted",
+            "text": "A Learning Management System (LMS) is used to:",
+            "options": [
+                ("Manage and deliver educational content", True),
+                ("Repair hardware", False),
+                ("Replace teachers fully", False),
+                ("Block communication", False),
+            ],
+        },
+        {
+            "category": "btvted",
+            "text": "Blended learning combines:",
+            "options": [
+                ("Only offline classes", False),
+                ("Only textbooks", False),
+                ("Online and face-to-face learning", True),
+                ("No interaction", False),
+            ],
+        },
+        {
+            "category": "btvted",
+            "text": "Assessment in education is important to:",
+            "options": [
+                ("Punish students", False),
+                ("Measure learning outcomes", True),
+                ("Stop progress", False),
+                ("Avoid feedback", False),
+            ],
+        },
+        {
+            "category": "btvted",
+            "text": "Educational technology helps teachers to:",
+            "options": [
+                ("Complicate lessons", False),
+                ("Enhance teaching and learning processes", True),
+                ("Remove student participation", False),
+                ("Avoid planning", False),
             ],
         },
     ]
@@ -647,7 +753,9 @@ def _fill_blank_data() -> list[dict]:
             ],
         },
 
-        # 10 BSIS / BTVTED mixed
+        # =========================
+        # 10 QUESTIONS - BSIS (FILL IN THE BLANK)
+        # =========================
         {
             "category": "bsis",
             "text": "MIS stands for Management Information _____.",
@@ -664,9 +772,9 @@ def _fill_blank_data() -> list[dict]:
             "text": "A DBMS stands for Database Management _____.",
             "blank_placeholder": "_____",
             "options": [
-                ("System", True),
                 ("Signal", False),
                 ("Screen", False),
+                ("System", True),
                 ("Sheet", False),
             ],
         },
@@ -675,10 +783,10 @@ def _fill_blank_data() -> list[dict]:
             "text": "Dashboards are used to present data in a _____ form.",
             "blank_placeholder": "_____",
             "options": [
-                ("visual", True),
                 ("wooden", False),
                 ("hidden", False),
                 ("manual", False),
+                ("visual", True),
             ],
         },
         {
@@ -686,9 +794,9 @@ def _fill_blank_data() -> list[dict]:
             "text": "Business intelligence helps support better _____.",
             "blank_placeholder": "_____",
             "options": [
-                ("decisions", True),
                 ("paintings", False),
                 ("furniture", False),
+                ("decisions", True),
                 ("songs", False),
             ],
         },
@@ -697,12 +805,71 @@ def _fill_blank_data() -> list[dict]:
             "text": "E-commerce refers to buying and selling goods _____.",
             "blank_placeholder": "_____",
             "options": [
-                ("online", True),
                 ("manually", False),
+                ("online", True),
                 ("offline only", False),
                 ("by fax only", False),
             ],
         },
+        {
+            "category": "bsis",
+            "text": "ERP systems integrate different business _____.",
+            "blank_placeholder": "_____",
+            "options": [
+                ("processes", True),
+                ("colors", False),
+                ("drawings", False),
+                ("songs", False),
+            ],
+        },
+        {
+            "category": "bsis",
+            "text": "A database stores organized _____.",
+            "blank_placeholder": "_____",
+            "options": [
+                ("music", False),
+                ("videos", False),
+                ("images only", False),
+                ("data", True),
+            ],
+        },
+        {
+            "category": "bsis",
+            "text": "Cloud computing allows access to resources via the _____.",
+            "blank_placeholder": "_____",
+            "options": [
+                ("paper", False),
+                ("internet", True),
+                ("radio", False),
+                ("television", False),
+            ],
+        },
+        {
+            "category": "bsis",
+            "text": "BI tools often use charts and graphs for data _____.",
+            "blank_placeholder": "_____",
+            "options": [
+                ("destruction", False),
+                ("confusion", False),
+                ("hiding", False),
+                ("visualization", True),
+            ],
+        },
+        {
+            "category": "bsis",
+            "text": "Decision Support Systems help managers make better _____.",
+            "blank_placeholder": "_____",
+            "options": [
+                ("decisions", True),
+                ("guesses", False),
+                ("mistakes", False),
+                ("jokes", False),
+            ],
+        },
+
+        # =========================
+        # 10 QUESTIONS - BTVTED (FILL IN THE BLANK)
+        # =========================
         {
             "category": "btvted",
             "text": "Gamification uses badges, points, and _____ to increase engagement.",
@@ -758,416 +925,259 @@ def _fill_blank_data() -> list[dict]:
                 ("confusion", False),
             ],
         },
+        {
+            "category": "btvted",
+            "text": "An LMS is used to manage learning _____.",
+            "blank_placeholder": "_____",
+            "options": [
+                ("content", True),
+                ("chairs", False),
+                ("rooms", False),
+                ("papers", False),
+            ],
+        },
+        {
+            "category": "btvted",
+            "text": "Blended learning combines online and _____ learning.",
+            "blank_placeholder": "_____",
+            "options": [
+                ("face-to-face", True),
+                ("random", False),
+                ("silent", False),
+                ("inactive", False),
+            ],
+        },
+        {
+            "category": "btvted",
+            "text": "Instructional design focuses on planning effective _____.",
+            "blank_placeholder": "_____",
+            "options": [
+                ("learning experiences", True),
+                ("games only", False),
+                ("breaks", False),
+                ("noise", False),
+            ],
+        },
+        {
+            "category": "btvted",
+            "text": "Assessment helps measure student _____.",
+            "blank_placeholder": "_____",
+            "options": [
+                ("learning", True),
+                ("height", False),
+                ("age", False),
+                ("location", False),
+            ],
+        },
+        {
+            "category": "btvted",
+            "text": "Educational technology enhances teaching and _____ processes.",
+            "blank_placeholder": "_____",
+            "options": [
+                ("learning", True),
+                ("sleeping", False),
+                ("walking", False),
+                ("eating", False),
+            ],
+        },
     ]
 
 
 def _drag_drop_data() -> list[dict]:
     return [
-        # 5 BSCS
+        # =========================
+        # 5 BSCS (FIXED)
+        # =========================
         {
             "category": "bscs",
             "text": "Match the web technology to its function.",
             "drag_items": [
-                {
-                    "item_key": "html_structure",
-                    "item_text": "HTML",
-                    "target_key": "slot_structure",
-                    "target_label": "Structure",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "css_style",
-                    "item_text": "CSS",
-                    "target_key": "slot_style",
-                    "target_label": "Style",
-                    "display_order": 2,
-                },
+                {"item_key": "html_structure", "item_text": "HTML", "target_key": "slot_structure", "target_label": "Structure", "display_order": 1},
+                {"item_key": "css_style", "item_text": "CSS", "target_key": "slot_style", "target_label": "Style", "display_order": 2},
+                {"item_key": "sql_db", "item_text": "SQL", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bscs",
             "text": "Match the programming term to its meaning.",
             "drag_items": [
-                {
-                    "item_key": "variable_storage",
-                    "item_text": "Variable",
-                    "target_key": "slot_storage",
-                    "target_label": "Stores value",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "loop_repeat",
-                    "item_text": "Loop",
-                    "target_key": "slot_repeat",
-                    "target_label": "Repeats code",
-                    "display_order": 2,
-                },
+                {"item_key": "variable_storage", "item_text": "Variable", "target_key": "slot_storage", "target_label": "Stores value", "display_order": 1},
+                {"item_key": "loop_repeat", "item_text": "Loop", "target_key": "slot_repeat", "target_label": "Repeats code", "display_order": 2},
+                {"item_key": "compiler_translate", "item_text": "Compiler", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bscs",
             "text": "Match the data structure to its description.",
             "drag_items": [
-                {
-                    "item_key": "array_ordered",
-                    "item_text": "Array",
-                    "target_key": "slot_ordered",
-                    "target_label": "Ordered collection",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "stack_lifo",
-                    "item_text": "Stack",
-                    "target_key": "slot_lifo",
-                    "target_label": "Last in, first out",
-                    "display_order": 2,
-                },
+                {"item_key": "array_ordered", "item_text": "Array", "target_key": "slot_ordered", "target_label": "Ordered collection", "display_order": 1},
+                {"item_key": "stack_lifo", "item_text": "Stack", "target_key": "slot_lifo", "target_label": "Last in, first out", "display_order": 2},
+                {"item_key": "queue_fifo", "item_text": "Queue", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bscs",
             "text": "Match the file extension to its common use.",
             "drag_items": [
-                {
-                    "item_key": "html_file",
-                    "item_text": ".html",
-                    "target_key": "slot_webpage",
-                    "target_label": "Webpage file",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "py_file",
-                    "item_text": ".py",
-                    "target_key": "slot_python",
-                    "target_label": "Python file",
-                    "display_order": 2,
-                },
+                {"item_key": "html_file", "item_text": ".html", "target_key": "slot_webpage", "target_label": "Webpage file", "display_order": 1},
+                {"item_key": "py_file", "item_text": ".py", "target_key": "slot_python", "target_label": "Python file", "display_order": 2},
+                {"item_key": "mp3_file", "item_text": ".mp3", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bscs",
             "text": "Match the algorithm concept to its example.",
             "drag_items": [
-                {
-                    "item_key": "divide_conquer",
-                    "item_text": "Divide and Conquer",
-                    "target_key": "slot_mergesort",
-                    "target_label": "Merge Sort",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "greedy",
-                    "item_text": "Greedy",
-                    "target_key": "slot_localbest",
-                    "target_label": "Local best choice",
-                    "display_order": 2,
-                },
+                {"item_key": "divide_conquer", "item_text": "Divide and Conquer", "target_key": "slot_mergesort", "target_label": "Merge Sort", "display_order": 1},
+                {"item_key": "greedy", "item_text": "Greedy", "target_key": "slot_localbest", "target_label": "Local best choice", "display_order": 2},
+                {"item_key": "recursion", "item_text": "Recursion", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
 
-        # 5 BSIT
+        # =========================
+        # 5 BSIT (FIXED)
+        # =========================
         {
             "category": "bsit",
             "text": "Match the security term to its description.",
             "drag_items": [
-                {
-                    "item_key": "firewall_filter",
-                    "item_text": "Firewall",
-                    "target_key": "slot_filter",
-                    "target_label": "Filters traffic",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "antivirus_malware",
-                    "item_text": "Antivirus",
-                    "target_key": "slot_malware",
-                    "target_label": "Detects malware",
-                    "display_order": 2,
-                },
+                {"item_key": "firewall_filter", "item_text": "Firewall", "target_key": "slot_filter", "target_label": "Filters traffic", "display_order": 1},
+                {"item_key": "antivirus_malware", "item_text": "Antivirus", "target_key": "slot_malware", "target_label": "Detects malware", "display_order": 2},
+                {"item_key": "vpn_encrypt", "item_text": "VPN", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bsit",
             "text": "Match the authentication type to its example.",
             "drag_items": [
-                {
-                    "item_key": "biometric_fingerprint",
-                    "item_text": "Biometric",
-                    "target_key": "slot_fingerprint",
-                    "target_label": "Fingerprint",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "password_secret",
-                    "item_text": "Password",
-                    "target_key": "slot_secret",
-                    "target_label": "Secret phrase",
-                    "display_order": 2,
-                },
+                {"item_key": "biometric_fingerprint", "item_text": "Biometric", "target_key": "slot_fingerprint", "target_label": "Fingerprint", "display_order": 1},
+                {"item_key": "password_secret", "item_text": "Password", "target_key": "slot_secret", "target_label": "Secret phrase", "display_order": 2},
+                {"item_key": "otp_code", "item_text": "OTP", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bsit",
             "text": "Match the network term to its role.",
             "drag_items": [
-                {
-                    "item_key": "router_routing",
-                    "item_text": "Router",
-                    "target_key": "slot_route",
-                    "target_label": "Routes packets",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "switch_lan",
-                    "item_text": "Switch",
-                    "target_key": "slot_lan",
-                    "target_label": "Connects devices in LAN",
-                    "display_order": 2,
-                },
+                {"item_key": "router_routing", "item_text": "Router", "target_key": "slot_route", "target_label": "Routes packets", "display_order": 1},
+                {"item_key": "switch_lan", "item_text": "Switch", "target_key": "slot_lan", "target_label": "Connects devices in LAN", "display_order": 2},
+                {"item_key": "modem_signal", "item_text": "Modem", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bsit",
             "text": "Match the backup type to its meaning.",
             "drag_items": [
-                {
-                    "item_key": "full_backup",
-                    "item_text": "Full Backup",
-                    "target_key": "slot_allfiles",
-                    "target_label": "Copies all files",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "incremental_backup",
-                    "item_text": "Incremental Backup",
-                    "target_key": "slot_changes",
-                    "target_label": "Copies recent changes",
-                    "display_order": 2,
-                },
+                {"item_key": "full_backup", "item_text": "Full Backup", "target_key": "slot_allfiles", "target_label": "Copies all files", "display_order": 1},
+                {"item_key": "incremental_backup", "item_text": "Incremental Backup", "target_key": "slot_changes", "target_label": "Copies recent changes", "display_order": 2},
+                {"item_key": "snapshot_backup", "item_text": "Snapshot", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bsit",
             "text": "Match the cloud model to its example.",
             "drag_items": [
-                {
-                    "item_key": "saas_email",
-                    "item_text": "SaaS",
-                    "target_key": "slot_emailapp",
-                    "target_label": "Email app service",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "iaas_server",
-                    "item_text": "IaaS",
-                    "target_key": "slot_virtualserver",
-                    "target_label": "Virtual server",
-                    "display_order": 2,
-                },
+                {"item_key": "saas_email", "item_text": "SaaS", "target_key": "slot_emailapp", "target_label": "Email app service", "display_order": 1},
+                {"item_key": "iaas_server", "item_text": "IaaS", "target_key": "slot_virtualserver", "target_label": "Virtual server", "display_order": 2},
+                {"item_key": "paas_dev", "item_text": "PaaS", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
 
-        # 5 BSIS
+        # =========================
+        # 5 BSIS (FIXED)
+        # =========================
         {
             "category": "bsis",
             "text": "Match the business term to its use.",
             "drag_items": [
-                {
-                    "item_key": "dashboard_visual",
-                    "item_text": "Dashboard",
-                    "target_key": "slot_visualreports",
-                    "target_label": "Visual reports",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "kpi_measure",
-                    "item_text": "KPI",
-                    "target_key": "slot_performance",
-                    "target_label": "Performance measure",
-                    "display_order": 2,
-                },
+                {"item_key": "dashboard_visual", "item_text": "Dashboard", "target_key": "slot_visualreports", "target_label": "Visual reports", "display_order": 1},
+                {"item_key": "kpi_measure", "item_text": "KPI", "target_key": "slot_performance", "target_label": "Performance measure", "display_order": 2},
+                {"item_key": "printer_device", "item_text": "Printer", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bsis",
             "text": "Match the database term to its meaning.",
             "drag_items": [
-                {
-                    "item_key": "table_rows",
-                    "item_text": "Table",
-                    "target_key": "slot_records",
-                    "target_label": "Stores records",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "query_request",
-                    "item_text": "Query",
-                    "target_key": "slot_retrieve",
-                    "target_label": "Retrieves data",
-                    "display_order": 2,
-                },
+                {"item_key": "table_rows", "item_text": "Table", "target_key": "slot_records", "target_label": "Stores records", "display_order": 1},
+                {"item_key": "query_request", "item_text": "Query", "target_key": "slot_retrieve", "target_label": "Retrieves data", "display_order": 2},
+                {"item_key": "index_speed", "item_text": "Index", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bsis",
             "text": "Match the system type to its purpose.",
             "drag_items": [
-                {
-                    "item_key": "mis_info",
-                    "item_text": "MIS",
-                    "target_key": "slot_managerinfo",
-                    "target_label": "Management information",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "dss_decision",
-                    "item_text": "DSS",
-                    "target_key": "slot_decisionsupport",
-                    "target_label": "Decision support",
-                    "display_order": 2,
-                },
+                {"item_key": "mis_info", "item_text": "MIS", "target_key": "slot_managerinfo", "target_label": "Management information", "display_order": 1},
+                {"item_key": "dss_decision", "item_text": "DSS", "target_key": "slot_decisionsupport", "target_label": "Decision support", "display_order": 2},
+                {"item_key": "os_system", "item_text": "Operating System", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bsis",
             "text": "Match the e-commerce term to its role.",
             "drag_items": [
-                {
-                    "item_key": "cart_order",
-                    "item_text": "Shopping Cart",
-                    "target_key": "slot_selecteditems",
-                    "target_label": "Selected items",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "checkout_payment",
-                    "item_text": "Checkout",
-                    "target_key": "slot_paymentprocess",
-                    "target_label": "Payment process",
-                    "display_order": 2,
-                },
+                {"item_key": "cart_order", "item_text": "Shopping Cart", "target_key": "slot_selecteditems", "target_label": "Selected items", "display_order": 1},
+                {"item_key": "checkout_payment", "item_text": "Checkout", "target_key": "slot_paymentprocess", "target_label": "Payment process", "display_order": 2},
+                {"item_key": "wishlist_save", "item_text": "Wishlist", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "bsis",
             "text": "Match the analytics term to its output.",
             "drag_items": [
-                {
-                    "item_key": "forecast_future",
-                    "item_text": "Forecasting",
-                    "target_key": "slot_futuretrend",
-                    "target_label": "Future trend",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "segmentation_groups",
-                    "item_text": "Segmentation",
-                    "target_key": "slot_groups",
-                    "target_label": "Customer groups",
-                    "display_order": 2,
-                },
+                {"item_key": "forecast_future", "item_text": "Forecasting", "target_key": "slot_futuretrend", "target_label": "Future trend", "display_order": 1},
+                {"item_key": "segmentation_groups", "item_text": "Segmentation", "target_key": "slot_groups", "target_label": "Customer groups", "display_order": 2},
+                {"item_key": "logging_data", "item_text": "Logging", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
 
-        # 5 BTVTED
+        # =========================
+        # 5 BTVTED (FIXED)
+        # =========================
         {
             "category": "btvted",
             "text": "Match the learning tool to its purpose.",
             "drag_items": [
-                {
-                    "item_key": "vr_immersive",
-                    "item_text": "VR",
-                    "target_key": "slot_immersive",
-                    "target_label": "Immersive simulation",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "ar_overlay",
-                    "item_text": "AR",
-                    "target_key": "slot_overlay",
-                    "target_label": "Digital overlay",
-                    "display_order": 2,
-                },
+                {"item_key": "vr_immersive", "item_text": "VR", "target_key": "slot_immersive", "target_label": "Immersive simulation", "display_order": 1},
+                {"item_key": "ar_overlay", "item_text": "AR", "target_key": "slot_overlay", "target_label": "Digital overlay", "display_order": 2},
+                {"item_key": "usb_storage", "item_text": "USB", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "btvted",
             "text": "Match the gamification element to its use.",
             "drag_items": [
-                {
-                    "item_key": "badge_reward",
-                    "item_text": "Badge",
-                    "target_key": "slot_achievement",
-                    "target_label": "Achievement reward",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "points_score",
-                    "item_text": "Points",
-                    "target_key": "slot_scorevalue",
-                    "target_label": "Score value",
-                    "display_order": 2,
-                },
+                {"item_key": "badge_reward", "item_text": "Badge", "target_key": "slot_achievement", "target_label": "Achievement reward", "display_order": 1},
+                {"item_key": "points_score", "item_text": "Points", "target_key": "slot_scorevalue", "target_label": "Score value", "display_order": 2},
+                {"item_key": "keyboard_input", "item_text": "Keyboard", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "btvted",
             "text": "Match the classroom technology term to its meaning.",
             "drag_items": [
-                {
-                    "item_key": "lms_platform",
-                    "item_text": "LMS",
-                    "target_key": "slot_learningplatform",
-                    "target_label": "Learning platform",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "quiz_assessment",
-                    "item_text": "Quiz",
-                    "target_key": "slot_assessment",
-                    "target_label": "Assessment tool",
-                    "display_order": 2,
-                },
+                {"item_key": "lms_platform", "item_text": "LMS", "target_key": "slot_learningplatform", "target_label": "Learning platform", "display_order": 1},
+                {"item_key": "quiz_assessment", "item_text": "Quiz", "target_key": "slot_assessment", "target_label": "Assessment tool", "display_order": 2},
+                {"item_key": "projector_display", "item_text": "Projector", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "btvted",
             "text": "Match the digital literacy term to its meaning.",
             "drag_items": [
-                {
-                    "item_key": "source_eval",
-                    "item_text": "Source Evaluation",
-                    "target_key": "slot_checkcredibility",
-                    "target_label": "Checks credibility",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "privacy_settings",
-                    "item_text": "Privacy Settings",
-                    "target_key": "slot_protectaccount",
-                    "target_label": "Protects account",
-                    "display_order": 2,
-                },
+                {"item_key": "source_eval", "item_text": "Source Evaluation", "target_key": "slot_checkcredibility", "target_label": "Checks credibility", "display_order": 1},
+                {"item_key": "privacy_settings", "item_text": "Privacy Settings", "target_key": "slot_protectaccount", "target_label": "Protects account", "display_order": 2},
+                {"item_key": "mouse_click", "item_text": "Mouse", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
         {
             "category": "btvted",
             "text": "Match the online learning concept to its description.",
             "drag_items": [
-                {
-                    "item_key": "synchronous_live",
-                    "item_text": "Synchronous",
-                    "target_key": "slot_liveclass",
-                    "target_label": "Live class",
-                    "display_order": 1,
-                },
-                {
-                    "item_key": "asynchronous_anytime",
-                    "item_text": "Asynchronous",
-                    "target_key": "slot_anytime",
-                    "target_label": "Anytime learning",
-                    "display_order": 2,
-                },
+                {"item_key": "synchronous_live", "item_text": "Synchronous", "target_key": "slot_liveclass", "target_label": "Live class", "display_order": 1},
+                {"item_key": "asynchronous_anytime", "item_text": "Asynchronous", "target_key": "slot_anytime", "target_label": "Anytime learning", "display_order": 2},
+                {"item_key": "offline_manual", "item_text": "Offline", "target_key": None, "target_label": None, "display_order": 3},
             ],
         },
     ]
@@ -1176,10 +1186,10 @@ def _drag_drop_data() -> list[dict]:
 def seed_questions(db: Session) -> dict:
     """
     Seed target:
-    - 30 multiple choice x 1 point = 30
-    - 30 fill_blank_choice x 1 point = 30
+    - 40 multiple choice x 1 point = 40
+    - 40 fill_blank_choice x 1 point = 40
     - 20 drag_drop x 2 mappings each = 40
-    Perfect score = 100
+    Perfect score = 120
     """
     mcq_data = _mcq_data()
     fill_data = _fill_blank_data()
@@ -1272,7 +1282,7 @@ def seed_questions(db: Session) -> dict:
             "drag_drop_questions": len(drag_data),
             "created_options": created_options,
             "created_drag_items": created_drag_items,
-            "perfect_score": 100,
+            "perfect_score": 120,
         }
 
     except Exception as e:

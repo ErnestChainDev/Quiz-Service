@@ -182,8 +182,8 @@ def add_drag_drop_item(
     question_id: int,
     item_key: str,
     item_text: str,
-    target_key: str,
-    target_label: str,
+    target_key: str | None,
+    target_label: str | None,
     display_order: int = 0,
 ):
     row = DragDropItem(
@@ -341,12 +341,16 @@ def upsert_attempt_answer(db: Session, attempt_id: int, answer: dict) -> Attempt
         payload = {"mappings": mappings}
 
         correct_items = get_drag_items_for_question(db, question_id)
-        correct_map = {item.item_key: item.target_key for item in correct_items}
+        correct_map = {
+            item.item_key: item.target_key
+            for item in correct_items
+            if item.target_key is not None
+        }
 
         submitted_map = {
-            str(m["item_key"]): str(m["target_key"])
+            m["item_key"]: m["target_key"]
             for m in mappings
-            if "item_key" in m and "target_key" in m
+            if "item_key" in m and m["target_key"] is not None
         }
 
         points_earned = 0
@@ -383,16 +387,40 @@ def get_attempt_answers(db: Session, attempt_id: int) -> list[AttemptAnswer]:
 
 
 def compute_attempt_totals(db: Session, attempt_id: int) -> tuple[int, int]:
+    # get all questions for this attempt
     questions = get_attempt_questions(db, attempt_id)
+
+    if not questions:
+        return 0, 0
+
+    question_ids = [q.id for q in questions]
+
+    # 🔥 fetch ALL drag items in ONE query (optimized)
+    drag_items = (
+        db.query(DragDropItem)
+        .filter(DragDropItem.question_id.in_(question_ids))
+        .all()
+    )
+
+    # 🔥 group drag items by question_id (ignore distractors)
+    drag_map: dict[int, list[DragDropItem]] = {}
+    for item in drag_items:
+        if item.target_key is None:
+            continue  # ignore distractor
+        drag_map.setdefault(item.question_id, []).append(item)
+
+    # 🔥 compute total score
     total = 0
     for q in questions:
         if q.question_type == "drag_drop":
-            total += len(get_drag_items_for_question(db, q.id))
+            total += len(drag_map.get(q.id, []))  # count only valid matches
         else:
             total += q.points
 
+    # 🔥 compute earned score
     answers = get_attempt_answers(db, attempt_id)
     score = sum(int(a.points_earned or 0) for a in answers)
+
     return score, total
 
 

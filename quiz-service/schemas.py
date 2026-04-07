@@ -29,8 +29,8 @@ class OptionCreateIn(BaseModel):
 class DragDropItemCreateIn(BaseModel):
     item_key: str
     item_text: str
-    target_key: str
-    target_label: str
+    target_key: str | None = None
+    target_label: str | None = None
     display_order: int = 0
 
 
@@ -50,8 +50,8 @@ class DragDropItemOut(BaseModel):
     question_id: int
     item_key: str
     item_text: str
-    target_key: str
-    target_label: str
+    target_key: str | None
+    target_label: str | None
     display_order: int
 
 
@@ -64,8 +64,8 @@ class QuestionOut(BaseModel):
     time_limit_seconds: int
     image_url: str | None = None
     blank_placeholder: str | None = None
-    options: list[OptionOut] = []
-    drag_items: list[DragDropItemOut] = []
+    options: list[OptionOut] = Field(default_factory=list)
+    drag_items: list[DragDropItemOut] = Field(default_factory=list)
 
 
 class AttemptStartOut(BaseModel):
@@ -82,14 +82,14 @@ class SaveAnswerIn(BaseModel):
     question_id: int
     answer_state: AnswerState = "answered"
     selected_option_id: int | None = None
-    mappings: list[DragDropMappingIn] = []
+    mappings: list[DragDropMappingIn] = Field(default_factory=list)
 
 
 class SavedAnswerOut(BaseModel):
     question_id: int
     answer_state: AnswerState
     selected_option_id: int | None = None
-    mappings: list[DragDropMappingIn] = []
+    mappings: list[DragDropMappingIn] = Field(default_factory=list)
     is_correct: bool
     points_earned: int
 
@@ -103,7 +103,7 @@ class AttemptProgressOut(BaseModel):
 
 
 class SubmitQuizIn(BaseModel):
-    answers: list[SaveAnswerIn] = []
+    answers: list[SaveAnswerIn] = Field(default_factory=list)
 
 
 class SubmitQuizOut(BaseModel):
