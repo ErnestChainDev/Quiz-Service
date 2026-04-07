@@ -15,10 +15,15 @@ from .models import (
 )
 
 
-def _get_random_questions_by_type(
+# =========================
+# 🔥 NEW FAIR RANDOM LOGIC
+# =========================
+
+def _get_random_questions_by_type_and_category(
     db: Session,
     *,
     question_type: str,
+    category: str,
     limit: int,
 ) -> list[Question]:
     if limit <= 0:
@@ -29,6 +34,7 @@ def _get_random_questions_by_type(
         .filter(
             Question.is_active.is_(True),
             Question.question_type == question_type,
+            Question.category == category,
         )
         .order_by(func.rand())
         .limit(limit)
@@ -36,44 +42,59 @@ def _get_random_questions_by_type(
     )
 
 
-def get_random_questions(db: Session, limit: int = 10) -> list[Question]:
+def get_random_questions(db: Session, limit: int = 20) -> list[Question]:
     """
-    Balanced selection by question type.
+    FAIR DISTRIBUTION:
 
-    Default target for 20:
-    - 8 mcq
-    - 7 fill_blank_choice
-    - 5 drag_drop
+    MCQ → 2 per category (8 total)
+    FILL → 2 per category (8 total)
+    DRAG → 1 per category (4 total)
 
-    If limit is different, it scales proportionally.
-    If one type lacks enough questions, remaining slots are filled
-    from other active questions not yet selected.
+    TOTAL = 20 questions
     """
-    if limit <= 0:
-        return []
 
-    # preferred mix based on 20-question quiz
-    mcq_target = round(limit * 0.40)
-    fill_target = round(limit * 0.35)
-    drag_target = limit - mcq_target - fill_target
+    categories = ["bscs", "bsit", "bsis", "btvted"]
 
     selected: list[Question] = []
     selected_ids: set[int] = set()
 
-    mcq = _get_random_questions_by_type(db, question_type="mcq", limit=mcq_target)
-    fill = _get_random_questions_by_type(
-        db,
-        question_type="fill_blank_choice",
-        limit=fill_target,
-    )
-    drag = _get_random_questions_by_type(db, question_type="drag_drop", limit=drag_target)
-
-    for bucket in (mcq, fill, drag):
-        for q in bucket:
+    def add_questions(qs: list[Question]):
+        for q in qs:
             if q.id not in selected_ids:
                 selected.append(q)
                 selected_ids.add(q.id)
 
+    # 🔥 MCQ
+    for cat in categories:
+        qs = _get_random_questions_by_type_and_category(
+            db,
+            question_type="mcq",
+            category=cat,
+            limit=2,
+        )
+        add_questions(qs)
+
+    # 🔥 FILL
+    for cat in categories:
+        qs = _get_random_questions_by_type_and_category(
+            db,
+            question_type="fill_blank_choice",
+            category=cat,
+            limit=2,
+        )
+        add_questions(qs)
+
+    # 🔥 DRAG
+    for cat in categories:
+        qs = _get_random_questions_by_type_and_category(
+            db,
+            question_type="drag_drop",
+            category=cat,
+            limit=1,
+        )
+        add_questions(qs)
+
+    # 🔥 fallback kung kulang
     remaining = limit - len(selected)
     if remaining > 0:
         extra = (
@@ -86,12 +107,9 @@ def get_random_questions(db: Session, limit: int = 10) -> list[Question]:
             .limit(remaining)
             .all()
         )
-        for q in extra:
-            if q.id not in selected_ids:
-                selected.append(q)
-                selected_ids.add(q.id)
+        add_questions(extra)
 
-    # shuffle final list so hindi grouped by type
+    # 🔥 shuffle final result
     if selected:
         ids = [q.id for q in selected]
         shuffled = (
@@ -104,6 +122,10 @@ def get_random_questions(db: Session, limit: int = 10) -> list[Question]:
 
     return selected
 
+
+# =========================
+# EXISTING FUNCTIONS
+# =========================
 
 def lock_attempt_questions(db: Session, attempt_id: int, questions: list[Question]) -> None:
     db.query(AttemptQuestion).filter(AttemptQuestion.attempt_id == attempt_id).delete(
@@ -143,6 +165,10 @@ def create_question(
     image_url: str | None = None,
     blank_placeholder: str | None = None,
 ):
+    # 🔥 auto fix points
+    if question_type == "drag_drop":
+        points = 2
+
     q = Question(
         category=category,
         text=text,
@@ -310,17 +336,10 @@ def upsert_attempt_answer(db: Session, attempt_id: int, answer: dict) -> Attempt
 
     if answer_state == "missed":
         payload = None
-        points_earned = 0
-        is_correct = False
 
     elif question.question_type in ("mcq", "fill_blank_choice"):
         selected_option_id = answer.get("selected_option_id")
-        if not selected_option_id:
-            answer_state = "unanswered"
-            payload = None
-            points_earned = 0
-            is_correct = False
-        else:
+        if selected_option_id:
             opt = (
                 db.query(AnswerOption)
                 .filter(
@@ -353,18 +372,11 @@ def upsert_attempt_answer(db: Session, attempt_id: int, answer: dict) -> Attempt
             if "item_key" in m and m["target_key"] is not None
         }
 
-        points_earned = 0
         for item_key, correct_target in correct_map.items():
             if submitted_map.get(item_key) == correct_target:
                 points_earned += 1
 
         is_correct = points_earned == len(correct_map) and len(correct_map) > 0
-
-        if not mappings:
-            answer_state = "unanswered"
-
-    else:
-        raise ValueError("Unsupported question type")
 
     row.answer_state = answer_state
     row.answer_payload = payload
@@ -387,7 +399,6 @@ def get_attempt_answers(db: Session, attempt_id: int) -> list[AttemptAnswer]:
 
 
 def compute_attempt_totals(db: Session, attempt_id: int) -> tuple[int, int]:
-    # get all questions for this attempt
     questions = get_attempt_questions(db, attempt_id)
 
     if not questions:
@@ -395,29 +406,25 @@ def compute_attempt_totals(db: Session, attempt_id: int) -> tuple[int, int]:
 
     question_ids = [q.id for q in questions]
 
-    # 🔥 fetch ALL drag items in ONE query (optimized)
     drag_items = (
         db.query(DragDropItem)
         .filter(DragDropItem.question_id.in_(question_ids))
         .all()
     )
 
-    # 🔥 group drag items by question_id (ignore distractors)
     drag_map: dict[int, list[DragDropItem]] = {}
     for item in drag_items:
         if item.target_key is None:
-            continue  # ignore distractor
+            continue
         drag_map.setdefault(item.question_id, []).append(item)
 
-    # 🔥 compute total score
     total = 0
     for q in questions:
         if q.question_type == "drag_drop":
-            total += len(drag_map.get(q.id, []))  # count only valid matches
+            total += len(drag_map.get(q.id, []))
         else:
             total += q.points
 
-    # 🔥 compute earned score
     answers = get_attempt_answers(db, attempt_id)
     score = sum(int(a.points_earned or 0) for a in answers)
 
@@ -426,38 +433,12 @@ def compute_attempt_totals(db: Session, attempt_id: int) -> tuple[int, int]:
 
 def submit_attempt(db: Session, attempt_id: int, answers: list[dict]) -> QuizAttempt:
     attempt = get_attempt_or_raise(db, attempt_id)
-    if attempt.status != "in_progress":
-        raise ValueError("Attempt is already finished")
-
-    locked_qids = get_locked_question_ids(db, attempt_id)
-    if not locked_qids:
-        raise ValueError("Attempt has no locked questions")
 
     for answer in answers:
         upsert_attempt_answer(db, attempt_id, answer)
 
-    existing = {
-        row.question_id: row
-        for row in get_attempt_answers(db, attempt_id)
-    }
-
-    for qid in locked_qids:
-        if qid not in existing:
-            db.add(
-                AttemptAnswer(
-                    attempt_id=attempt_id,
-                    question_id=qid,
-                    answer_state="unanswered",
-                    answer_payload=None,
-                    is_correct=False,
-                    points_earned=0,
-                    answered_at=None,
-                )
-            )
-
-    db.commit()
-
     score, total = compute_attempt_totals(db, attempt_id)
+
     attempt.score = score
     attempt.total = total
     attempt.status = "completed"
@@ -470,10 +451,9 @@ def submit_attempt(db: Session, attempt_id: int, answers: list[dict]) -> QuizAtt
 
 def cancel_attempt(db: Session, attempt_id: int) -> QuizAttempt:
     attempt = get_attempt_or_raise(db, attempt_id)
-    if attempt.status != "in_progress":
-        raise ValueError("Only active attempts can be cancelled")
 
     score, total = compute_attempt_totals(db, attempt_id)
+
     attempt.score = score
     attempt.total = total
     attempt.status = "cancelled"
@@ -487,7 +467,7 @@ def cancel_attempt(db: Session, attempt_id: int) -> QuizAttempt:
 def category_breakdown(db: Session, attempt_id: int) -> dict:
     rows = db.execute(
         text("""
-        SELECT q.category, COALESCE(SUM(aa.points_earned), 0) AS earned_points
+        SELECT q.category, COALESCE(SUM(aa.points_earned), 0)
         FROM attempt_answer aa
         JOIN question q ON q.id = aa.question_id
         WHERE aa.attempt_id = :aid
@@ -497,7 +477,8 @@ def category_breakdown(db: Session, attempt_id: int) -> dict:
     ).fetchall()
 
     out = {"bscs": 0, "bsit": 0, "bsis": 0, "btvted": 0}
-    for cat, earned_points in rows:
+    for cat, earned in rows:
         if cat in out:
-            out[cat] = int(earned_points or 0)
+            out[cat] = int(earned or 0)
+
     return out
