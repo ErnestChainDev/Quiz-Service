@@ -366,7 +366,15 @@ def build_router(SessionLocal):
         else:
             try:
                 async with httpx.AsyncClient(timeout=10.0) as client:
-                    r = await client.post(f"{AI_SERVICE_URL}/ai/recommend", json=rec_payload)
+                    r = await client.post(
+                        f"{AI_SERVICE_URL}/ai/recommend",
+                        json=rec_payload,
+                        headers={
+                            "X-User-ID": str(uid),   # 🔥 REQUIRED
+                            # optional kung may service token ka:
+                            # "Authorization": f"Bearer {SERVICE_TOKEN}",
+                        },
+                    )
 
                 recommendation = r.json() if 200 <= r.status_code < 300 else {
                     "detail": "AI recommend failed",
