@@ -51,6 +51,10 @@ AI_SERVICE_URL = os.getenv(
 ).rstrip("/")
 
 MIN_RECOMMEND_PERCENT = float(os.getenv("MIN_RECOMMEND_PERCENT", "30"))
+def to_list(value: str | None) -> list[str]:
+    if not value:
+        return []
+    return [v.strip() for v in value.split(",") if v.strip()]
 
 
 def build_router(SessionLocal):
@@ -343,8 +347,11 @@ def build_router(SessionLocal):
 
         # ── Fetch profile so user_skills / interests / career_goals are available ──
         profile: dict = {}
+        pr = None  # ✅ initialize
+
         profile_service_url = os.getenv("PROFILE_SERVICE_URL", "").rstrip("/")
         service_token = os.getenv("SERVICE_TOKEN", "")
+
         if profile_service_url:
             try:
                 async with httpx.AsyncClient(timeout=10.0) as client:
@@ -352,10 +359,16 @@ def build_router(SessionLocal):
                         f"{profile_service_url}/profile/by-user/{uid}",
                         headers={"X-Service-Token": service_token},
                     )
+
                 if pr.status_code == 200:
                     profile = pr.json()
-            except Exception:
-                pass
+
+            except Exception as e:
+                print("PROFILE FETCH ERROR:", str(e))
+
+        # ✅ CLEAN DEBUG
+        print("PROFILE STATUS:", pr.status_code if pr else "NO REQUEST")
+        print("PROFILE DATA:", profile)
 
         rec_payload = {
             "user_id": uid,
@@ -366,9 +379,9 @@ def build_router(SessionLocal):
             "programming": breakdown.get("bscs", 0),
             "networking": breakdown.get("bsit", 0),
             "design": breakdown.get("btvted", 0),
-            "user_skills": profile.get("skills", []),
-            "user_interests": profile.get("interests", []),
-            "user_career_goals": profile.get("career_goals", []),
+            "user_skills": to_list(profile.get("skills")),
+            "user_interests": to_list(profile.get("interests")),
+            "user_career_goals": to_list(profile.get("career_goals")),
         }
 
         percent_score = (attempt.score / attempt.total) * 100 if attempt.total > 0 else 0.0
@@ -385,7 +398,13 @@ def build_router(SessionLocal):
         else:
             try:
                 async with httpx.AsyncClient(timeout=10.0) as client:
-                    r = await client.post(f"{AI_SERVICE_URL}/ai/recommend", json=rec_payload)
+                    r = await client.post(
+                        f"{AI_SERVICE_URL}/ai/recommend",
+                        json=rec_payload,
+                        headers={
+                            "X-User-ID": str(uid)
+                        }
+                    )
 
                 recommendation = r.json() if 200 <= r.status_code < 300 else {
                     "detail": "AI recommend failed",
